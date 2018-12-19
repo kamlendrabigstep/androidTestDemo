@@ -1,0 +1,28 @@
+<resources>
+
+    <!-- Base application theme. -->
+    <style name="AppTheme" parent="Theme.AppCompat.Light.DarkActionBar">
+        <!-- Customize your theme here. -->
+        <item name="colorPrimary">@color/colorPrimary</item>
+        <item name="colorPrimaryDark">@color/colorPrimaryDark</item>
+        <item name="colorAccent">@color/colorAccent</item>
+    </style>
+    <style name="TextAppearance" parent="TextAppearance.AppCompat.Title">
+        <item name="android:typeface">monospace</item>
+    </style>
+    <style name="RatingBarSmall" parent="android:Widget.DeviceDefault.RatingBar.Small" />
+    <style name="MyRatingBar" parent="android:Widget.DeviceDefault.RatingBar.Indicator" />
+    <style name="RatingBar" parent="android:Widget.DeviceDefault.RatingBar" />
+
+    <!--Floating label text style-->
+    <style name="MyHintText" parent="TextAppearance.AppCompat.Small">
+        <item name="android:textColor">@color/colorAccent</item>
+    </style>
+
+    <!--Input field style-->
+    <style name="MyEditText" parent="Theme.AppCompat.Light">
+        <item name="colorControlNormal">@color/colorPrimaryDark</item>
+        <item name="colorControlActivated">@color/colorAccent</item>
+        <item name="colorControlHighlight">@color/transparent</item>
+    </style>
+</resources>
