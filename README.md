@@ -7,13 +7,14 @@ This library is made for rendering dynamic android forms with rich attributes an
 
 
 ### HOW TO USE?
-
+```java
 @formResponse JSONObject,
 @mContext Activity
 FormWrapper formWrapper = new FormWrapper(mContext);
 formWrapper.setFormSchema(formResponse);
 View formLayout = formWrapper.getFormWrapper(mContext, formResponse);
-Inject form layout in any view as per your requirement.
+// Inject form layout in any view as per your requirement.
+```
 
 ### Forms / Fields Response Format
   Generel Attributes Of Fields :- 
