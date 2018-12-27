@@ -45,7 +45,7 @@ Field | Attribute | Description
 
 
 ![alt text](https://raw.githubusercontent.com/kamlendrabigstep/androidTestDemo/master/screenshots/date_time_field_demo.gif)
-![alt text](https://raw.githubusercontent.com/kamlendrabigstep/androidTestDemo/master/screenshots/date_time_field_demo.gif)
+![alt text](https://github.com/kamlendrabigstep/androidTestDemo/blob/master/screenshots/form_layouts_demo.gif)
 
 
 
