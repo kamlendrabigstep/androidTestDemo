@@ -24,7 +24,10 @@ import java.util.Map;
 
 public class InputTypeUtil {
     public static final int TYPE_CLASS_TEXT_AREA = 81;
-    public static final int TYPE_CLASS_TEXT_LOCATION = 991;
+    public static final int TYPE_CLASS_TEXT_LOCATION = 911;
+    public static final int TYPE_CLASS_DATE_TIME = 912;
+    public static final int TYPE_CLASS_DATE = 913;
+    public static final int TYPE_CLASS_TIME = 914;
     private static final Map<String, Integer> inputTypes = new HashMap< String,Integer>(){
         {
             put("text", InputType.TYPE_CLASS_TEXT);
@@ -42,6 +45,8 @@ public class InputTypeUtil {
             put("date_time", InputType.TYPE_CLASS_DATETIME);
             put("dateTime", InputType.TYPE_CLASS_DATETIME);
             put("location", TYPE_CLASS_TEXT_LOCATION);
+            put("date", TYPE_CLASS_DATE);
+            put("time", TYPE_CLASS_TIME);
         }
     };
 

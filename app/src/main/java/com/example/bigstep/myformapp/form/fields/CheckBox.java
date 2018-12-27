@@ -20,16 +20,21 @@ import android.graphics.PorterDuffColorFilter;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatCheckedTextView;
 import android.util.Log;
 import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
+import android.widget.LinearLayout;
+import android.widget.RelativeLayout;
 
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -64,6 +69,7 @@ public class CheckBox extends AbstractWidget implements View.OnClickListener {
      * @param defaultValue          Default value of the field.
      * @param _widget               List of FormWidget.
      */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     public CheckBox(Context context, JSONObject element, String property, String label, boolean hasValidator,
                     int defaultValue, ArrayList<AbstractWidget> _widget, Map<String, AbstractWidget> map) {
         super(context, property, hasValidator);
@@ -85,20 +91,36 @@ public class CheckBox extends AbstractWidget implements View.OnClickListener {
 
         checkedTextView.setId(R.id.checkbox);
         checkedTextView.setChecked(defaultValue != 0);
-        checkedTextView.setPadding(mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
-                mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
-                mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
-                mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp));
+        if (FormWrapper.getLayoutType() == 2) {
+            checkedTextView.setBackground(ContextCompat.getDrawable(mContext, R.drawable.bottom_border_rounded_corner));
+            checkedTextView.setPadding(mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_15dp));
+            LinearLayout.LayoutParams layoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
+            layoutParams.setMargins(mContext.getResources().getDimensionPixelSize(R.dimen.dimen_15dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_15dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp));
+            checkedTextView.setLayoutParams(layoutParams);
+
+        } else {
+            checkedTextView.setPadding(mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp));
+        }
         _layout.addView(checkedTextView);
 
-
-        // Adding bottom line divider.
-        View view = new View(mContext);
-        view.setBackgroundResource(R.color.light_gray);
-        ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
-                mContext.getResources().getDimensionPixelSize(R.dimen.padding_1dp));
-        view.setLayoutParams(layoutParams);
-        _layout.addView(view);
+        if (FormWrapper.getLayoutType() != 2) {
+            // Adding bottom line divider.
+            View view = new View(mContext);
+            view.setBackgroundResource(R.color.light_gray);
+            ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
+                    mContext.getResources().getDimensionPixelSize(R.dimen.padding_1dp));
+            view.setLayoutParams(layoutParams);
+            _layout.addView(view);
+        }
 
         // Applying click listener on the check box to mark checkbox as checked/unchecked.
         checkedTextView.setOnClickListener(new View.OnClickListener() {
@@ -127,13 +149,14 @@ public class CheckBox extends AbstractWidget implements View.OnClickListener {
      */
     public static StateListDrawable getCheckMarkDrawable(Context context) {
 
-        Drawable drawable = ContextCompat.getDrawable(context, R.drawable.ic_done_24dp).mutate();
+        Drawable drawable = ContextCompat.getDrawable(context, R.drawable.ic_check_box_24dp).mutate();
         drawable.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(context, R.color.colorPrimary),
                 PorterDuff.Mode.SRC_ATOP));
+        Drawable drawableUnChecked = ContextCompat.getDrawable(context, R.drawable.ic_check_box_outline_24dp).mutate();
         StateListDrawable sld = new StateListDrawable();
         sld.addState(new int[]{android.R.attr.state_checked, android.R.attr.state_focused}, drawable);
-        sld.addState(new int[]{-android.R.attr.state_checked, android.R.attr.state_focused}, new ColorDrawable(Color.WHITE));
-        sld.addState(new int[]{-android.R.attr.state_checked}, new ColorDrawable(Color.WHITE));
+        sld.addState(new int[]{-android.R.attr.state_checked, android.R.attr.state_focused}, drawableUnChecked);
+        sld.addState(new int[]{-android.R.attr.state_checked}, drawableUnChecked);
         sld.addState(new int[]{android.R.attr.state_checked}, drawable);
         return sld;
     }

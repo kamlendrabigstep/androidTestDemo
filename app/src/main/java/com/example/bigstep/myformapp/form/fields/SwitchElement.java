@@ -57,7 +57,12 @@ public class SwitchElement extends AbstractWidget {
         mFormActivity = new FormWrapper(mContext);
 
         // Inflate the field view layout.
-        View inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_switch_1, null);
+        View inflateView;
+        if (FormWrapper.getLayoutType() == 1) {
+            inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_switch_1, null);
+        } else {
+            inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_switch_2, null);
+        }
         getViews(inflateView, joProperty);
         inflateView.setTag(mFieldName);
         setValue(joProperty.optString("value", "0"));

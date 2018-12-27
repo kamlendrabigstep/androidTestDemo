@@ -52,8 +52,6 @@
             android:layout_weight="1"
             android:layout_gravity="center_vertical"
             android:id="@+id/view_label"
-            android:paddingLeft="@dimen/padding_5dp"
-            android:paddingStart="@dimen/padding_5dp"
             android:paddingRight="@dimen/padding_5dp"
             android:paddingEnd="@dimen/padding_5dp"
             android:textSize="@dimen/size_14sp" />

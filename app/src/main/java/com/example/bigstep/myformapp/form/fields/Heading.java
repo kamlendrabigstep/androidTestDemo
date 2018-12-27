@@ -22,15 +22,15 @@ import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.bigstep.myformapp.R;
-import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 
 import org.json.JSONObject;
 
 /**
- * This class is used for rendering Heading / Dummy element which is specially for lengthy form
- *  to categories their fields.
+ * @Heading is used for rendering Heading / Dummy element which is specially for lengthy form
+ * to categories their fields.
  */
 public class Heading extends AbstractWidget {
 
@@ -39,9 +39,16 @@ public class Heading extends AbstractWidget {
     protected TextView _label;
     protected View view;
 
-    public Heading(final Context context, final String property, boolean hasValidator,
-                   boolean isNeedToAddPadding, String label, final JSONObject jsonObject) {
-        super(context, property, hasValidator);
+    /**
+     * Public constructor to inflate the headings.
+     *
+     * @param context
+     * @param property
+     * @param label
+     * @param jsonObject
+     */
+    public Heading(final Context context, final String property, String label, final JSONObject jsonObject) {
+        super(context, property, false);
 
         LinearLayout.LayoutParams layoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
         layoutParams.setMargins(context.getResources().getDimensionPixelSize(R.dimen.dimen_5dp),
@@ -56,28 +63,26 @@ public class Heading extends AbstractWidget {
         LinearLayout.LayoutParams dividerLayoutParams = WidgetLayoutParams.getCustomWidthHeightLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                 context.getResources().getDimensionPixelSize(R.dimen.padding_1dp));
         dividerView.setLayoutParams(dividerLayoutParams);
-        addView(context, label, isNeedToAddPadding);
+        addView(context, label);
 
     }
 
     /**
      * Method to add label view.
      *
-     * @param context      Context of the class.
-     * @param label        Label to be shown.
-     * @param isAddPadding True if need to add padding.
+     * @param context Context of the class.
+     * @param label   Label to be shown.
      */
-    public void addView(Context context, String label, boolean isAddPadding) {
+    public void addView(Context context, String label) {
         _label = new TextView(context);
         _label.setText(label);
         _label.setTypeface(null, Typeface.BOLD);
         _label.setLayoutParams(FormWrapper.defaultLayoutParams);
-        if (isAddPadding) {
-            _label.setPadding(context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
-                    context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
-                    context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
-                    context.getResources().getDimensionPixelSize(R.dimen.padding_5dp));
-        }
+        _label.setPadding(context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
+                context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
+                context.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
+                context.getResources().getDimensionPixelSize(R.dimen.padding_5dp));
+
 
         view = new View(context);
         view.setLayoutParams(viewParams);

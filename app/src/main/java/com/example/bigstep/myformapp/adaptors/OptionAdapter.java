@@ -14,13 +14,8 @@
 package com.example.bigstep.myformapp.adaptors;
 
 import android.content.Context;
-import android.graphics.PorterDuff;
-import android.graphics.PorterDuffColorFilter;
-import android.graphics.Typeface;
-import android.graphics.drawable.Drawable;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.RecyclerView;
-import android.util.TypedValue;
 import android.view.Gravity;
 import android.view.LayoutInflater;
 import android.view.View;
@@ -32,12 +27,15 @@ import com.example.bigstep.myformapp.model.Option;
 
 import java.util.List;
 
+/**
+ * @OptionAdapter used for managing option menu of the multiOptions.
+ *
+ */
 public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ItemHolder> {
 
     private Context mContext;
     private List<Option> list;
     private OnItemClickListener onItemClickListener;
-    private boolean mIsOptionsWithIcon;
     private String mDefaultValue;
 
     public OptionAdapter(Context context, List<Option> list) {
@@ -45,21 +43,29 @@ public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ItemHolder
         this.list = list;
     }
 
-    public OptionAdapter(Context context, List<Option> list, boolean isOptionWithIcon) {
-        this.mContext = context;
-        this.list = list;
-        this.mIsOptionsWithIcon = isOptionWithIcon;
-    }
-
-
+    /**
+     * Getter for on item click listener
+     *
+     * @return
+     */
     public OnItemClickListener getOnItemClickListener() {
         return onItemClickListener;
     }
 
+    /**
+     * Setter for on item click listener
+     *
+     * @param listener
+     */
     public void setOnItemClickListener(OnItemClickListener listener) {
         onItemClickListener = listener;
     }
 
+    /**
+     * Setting default value for selected option.
+     *
+     * @param defaultValue
+     */
     public void setDefaultKey(String defaultValue) {
         mDefaultValue = defaultValue;
     }
@@ -77,61 +83,14 @@ public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ItemHolder
             holder.tvMenuTitle.setText(item.getName());
         }
 
-        // Showing the selected option with check mark.
-        if (mContext != null && mDefaultValue != null && !mDefaultValue.equals("0")
+        // Marking the selected option with primary color
+        if (mContext != null && mDefaultValue != null
                 && mDefaultValue.equals(item.getKey())) {
-            holder.viewContainer.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
-            holder.tvMenuTitle.getLayoutParams().width = ViewGroup.LayoutParams.MATCH_PARENT;
-            Drawable drawable = ContextCompat.getDrawable(mContext, R.drawable.ic_done_24dp).mutate();
-            drawable.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(mContext, R.color.colorPrimary),
-                    PorterDuff.Mode.SRC_ATOP));
-            holder.tvMenuTitle.setPadding(0, mContext.getResources().getDimensionPixelSize(R.dimen.dimen_5dp),
-                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_5dp), 0);
-            holder.tvMenuTitle.setCompoundDrawablesWithIntrinsicBounds(null, null, drawable, null);
+            holder.tvMenuTitle.setTextColor(ContextCompat.getColor(mContext, R.color.colorPrimary));
         } else {
-            holder.tvMenuTitle.setCompoundDrawablesWithIntrinsicBounds(null, null, null, null);
+            holder.tvMenuTitle.setTextColor(ContextCompat.getColor(mContext, R.color.black));
         }
 
-        if (mIsOptionsWithIcon) {
-            holder.tvMenuIcon.setVisibility(View.VISIBLE);
-            Typeface typeFace = Typeface.createFromAsset(mContext.getAssets(), "fontIcons/fontawesome-webfont.ttf");
-            holder.tvMenuIcon.setTypeface(typeFace);
-            holder.tvMenuTitle.setTextSize(TypedValue.COMPLEX_UNIT_PX,
-                    mContext.getResources().getDimension(R.dimen.size_20sp));
-            if (mContext != null) {
-                holder.tvMenuIcon.setMinWidth(mContext.getResources().getDimensionPixelSize(R.dimen.dimen_30dp));
-            }
-            if (item.getIcon() != null && !item.getIcon().isEmpty()) {
-                holder.tvMenuIcon.setVisibility(View.VISIBLE);
-                try {
-                    holder.tvMenuIcon.setText(new String(Character.toChars(Integer.parseInt(
-                            item.getIcon(), 16))));
-                } catch (NumberFormatException e) {
-                    holder.tvMenuIcon.setText("\uf08b");
-                }
-            } else {
-                switch (item.getKey()) {
-                    case "1":
-                        holder.tvMenuIcon.setText("\uf167");
-                        break;
-
-                    case "2":
-                        holder.tvMenuIcon.setText("\uf27d");
-                        break;
-
-                    case "3":
-                        holder.tvMenuIcon.setText("\uf10b");
-                        break;
-
-                    default:
-                        holder.tvMenuIcon.setText("\uf01d");
-                        break;
-                }
-            }
-
-        } else {
-            holder.tvMenuIcon.setVisibility(View.GONE);
-        }
         holder.mainView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -148,10 +107,16 @@ public class OptionAdapter extends RecyclerView.Adapter<OptionAdapter.ItemHolder
         return list.size();
     }
 
+    /**
+     * @OnItemClickListener interface for handling on option change event.
+     */
     public interface OnItemClickListener {
         void onItemClick(Option value, int position);
     }
 
+    /**
+     * @ItemHolder for handling adaptor views
+     */
     public static class ItemHolder extends RecyclerView.ViewHolder {
 
         TextView tvMenuTitle, tvMenuIcon;

@@ -149,7 +149,12 @@ public class Select extends AbstractWidget implements View.OnClickListener {
         // Setting up the adapter.
         setAdapter();
         // Inflate the field view layout.
-        View configFieldView = mLayoutInflater.inflate(R.layout.element_type_select_1, null);
+        View configFieldView;
+        if (FormWrapper.getLayoutType() == 2) {
+            configFieldView = mLayoutInflater.inflate(R.layout.element_type_select_2, null);
+        } else {
+            configFieldView = mLayoutInflater.inflate(R.layout.element_type_select_1, null);
+        }
         getViews(configFieldView, label, description);
         _layout.addView(configFieldView);
         configFieldView.setTag(mFieldName);
@@ -172,8 +177,6 @@ public class Select extends AbstractWidget implements View.OnClickListener {
     private void setAdapter() {
         if (!mIsOptionWithIcon) {
             mSheetAdapter = new OptionAdapter(mContext, mOptionsItemList);
-        } else {
-            mSheetAdapter = new OptionAdapter(mContext, mOptionsItemList, true);
         }
         mSheetAdapter.setOnItemClickListener(new OptionAdapter.OnItemClickListener() {
             @Override
@@ -212,7 +215,9 @@ public class Select extends AbstractWidget implements View.OnClickListener {
 
         // Getting label, description and field value views.
         TextView tvLabel = configFieldView.findViewById(R.id.view_label);
-        tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        if (FormWrapper.getLayoutType() != 2) {
+            tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        }
         TextView tvDescription = configFieldView.findViewById(R.id.view_description);
         etFieldValue = configFieldView.findViewById(R.id.field_value);
         etFieldValue.setInputType(InputType.TYPE_TEXT_FLAG_NO_SUGGESTIONS);

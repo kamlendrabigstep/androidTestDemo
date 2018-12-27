@@ -33,6 +33,7 @@ import android.widget.TimePicker;
 
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.form.helper.FormWrapper;
 
 import org.json.JSONObject;
 
@@ -42,7 +43,7 @@ import java.util.Calendar;
 import java.util.Date;
 
 /**
- * This form widget is used to show render views of date, time & datetime elements
+ * @DateTime widget is used to show render views of date, time & datetime elements
  * in the spinner and calender view.
  */
 
@@ -96,7 +97,12 @@ public class DateTime extends AbstractWidget implements View.OnClickListener {
     private void inflateView() {
 
         // Inflate the field view layout.
-        mConfigFieldView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_select_1, null);
+        // Inflate the field view layout.
+        if (FormWrapper.getLayoutType() == 2) {
+            mConfigFieldView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_select_2, null);
+        } else {
+            mConfigFieldView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_select_1, null);
+        }
         getViews();
         mConfigFieldView.setTag(mFieldName);
         _layout.addView(mConfigFieldView);
@@ -110,7 +116,9 @@ public class DateTime extends AbstractWidget implements View.OnClickListener {
 
         // Getting label, description and field value views.
         tvLabel = mConfigFieldView.findViewById(R.id.view_label);
-        tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        if (FormWrapper.getLayoutType() != 2) {
+            tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
+        }
         tvLabel.setText(mLabel != null ? mLabel : getDisplayText());
         TextView tvDescription = mConfigFieldView.findViewById(R.id.view_description);
         etFieldValue = mConfigFieldView.findViewById(R.id.field_value);

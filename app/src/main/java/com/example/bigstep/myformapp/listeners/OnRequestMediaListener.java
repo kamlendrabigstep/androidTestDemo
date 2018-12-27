@@ -16,5 +16,5 @@ package com.example.bigstep.myformapp.listeners;
  * A listener to handle media element events at view level.
  */
 public interface OnRequestMediaListener {
-    void onRequestMedia(String mediaType);
+    void onRequestMedia(String mediaType, String fieldName);
 }

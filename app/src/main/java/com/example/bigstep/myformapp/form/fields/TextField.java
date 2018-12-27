@@ -35,6 +35,7 @@ import android.widget.TextView;
 
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 import com.example.bigstep.myformapp.utils.InputTypeUtil;
 
@@ -52,8 +53,8 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- * EditText is used to inflate the fields for the Edit text with the error view
- * and the other module specific views.
+ * @TextField is used to inflate the fields for the Edit text with the rich input types
+ * like number, phone, location, textarea etc.
  */
 
 public class TextField extends AbstractWidget implements TextWatcher, AdapterView.OnItemClickListener,
@@ -97,7 +98,15 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
 
 
         // Inflate the field view layout.
-        View inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_1, null);
+        View inflateView;
+        // Inflate the field view layout.
+        if (FormWrapper.getLayoutType() == 3) {
+            inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_3, null);
+        } else if (FormWrapper.getLayoutType() == 2){
+            inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_2, null);
+        } else {
+            inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_1, null);
+        }
         getViews(inflateView, description);
         setInputType(inputType);
         inflateView.setTag(mFieldName);
@@ -128,13 +137,12 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
         etFieldValue.setVisibility(View.VISIBLE);
         etFieldValue.setTag("edittext_" + mFieldName);
 
-        if (jsonObjectProperty.optString("label") != null && !jsonObjectProperty.optString("label").isEmpty()) {
+        if (FormWrapper.getLayoutType() != 2 && jsonObjectProperty.optString("label") != null && !jsonObjectProperty.optString("label").isEmpty()) {
             tvLabel.setVisibility(View.VISIBLE);
             etFieldValue.setPadding(0, mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp), 0, 0);
             tvLabel.setText(jsonObjectProperty.optString("label"));
         } else {
             tvLabel.setVisibility(View.GONE);
-            etFieldValue.setPadding(0, 0, 0, 0);
         }
 
         // Showing description field if it is coming in response.

@@ -1,5 +1,5 @@
 <resources>
-    <string name="app_name">MyFormApp</string>
+    <string name="app_name">Forms Demo</string>
     <string name="view_all">View All</string>
     <string name="end_of_results">End of results</string>
     <string name="please_select">please select</string>

@@ -21,6 +21,8 @@ import android.graphics.Typeface;
 import android.graphics.drawable.ColorDrawable;
 import android.graphics.drawable.Drawable;
 import android.graphics.drawable.StateListDrawable;
+import android.os.Build;
+import android.support.annotation.RequiresApi;
 import android.support.v4.content.ContextCompat;
 import android.support.v7.widget.AppCompatCheckedTextView;
 import android.util.Log;
@@ -28,11 +30,13 @@ import android.view.Gravity;
 import android.view.View;
 import android.view.ViewGroup;
 import android.widget.ArrayAdapter;
+import android.widget.LinearLayout;
 import android.widget.TextView;
 
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 
 import org.json.JSONArray;
 import org.json.JSONException;
@@ -43,8 +47,8 @@ import java.util.ArrayList;
 import java.util.Map;
 
 /**
- *  Widget is used to inflate the fields for the Multi-Checkbox / Multi-Select with the label
- *  and tick mark if checked / selected.
+ *  @MultiSelect widget is used to inflate the fields for the Multi-Checkbox / Multi-Select with the label
+ *  and tick box if checked.
  */
 
 public class MultiSelect extends AbstractWidget {
@@ -72,6 +76,7 @@ public class MultiSelect extends AbstractWidget {
      * @param hasValidator True if the field has validation (Compulsory field).
      * @param description  Description of the field.
      */
+    @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
     public MultiSelect(Context context, String property, JSONObject options, String label, boolean hasValidator,
                        String description, ArrayList<AbstractWidget> widgets, Map<String, AbstractWidget> map) {
         super(context, property, hasValidator);
@@ -101,6 +106,22 @@ public class MultiSelect extends AbstractWidget {
                     mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp), 0);
             _layout.addView(tvDescription);
         }
+        LinearLayout linearLayout = new LinearLayout(mContext);
+        if (FormWrapper.getLayoutType() == 2) {
+            LinearLayout.LayoutParams lLayoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
+            lLayoutParams.setMargins(mContext.getResources().getDimensionPixelSize(R.dimen.dimen_20dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_10dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_20dp),
+                    mContext.getResources().getDimensionPixelSize(R.dimen.dimen_10dp));
+            linearLayout.setLayoutParams(lLayoutParams);
+            linearLayout.setOrientation(LinearLayout.VERTICAL);
+            linearLayout.addView(tvLabel);
+            linearLayout.setBackground(ContextCompat.getDrawable(mContext, R.drawable.bottom_border_rounded_corner));
+
+        } else {
+            tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
+            _layout.addView(tvLabel);
+        }
 
         JSONArray propertyNames = options.names();
         String name, p;
@@ -126,7 +147,6 @@ public class MultiSelect extends AbstractWidget {
                         mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp),
                         mContext.getResources().getDimensionPixelSize(R.dimen.padding_5dp),
                         mContext.getResources().getDimensionPixelSize(R.dimen.padding_10dp));
-                _layout.addView(checkedTextView);
 
                 // Adding bottom line divider.
                 View view = new View(mContext);
@@ -134,7 +154,13 @@ public class MultiSelect extends AbstractWidget {
                 ViewGroup.LayoutParams layoutParams = new ViewGroup.LayoutParams(ViewGroup.LayoutParams.MATCH_PARENT,
                         mContext.getResources().getDimensionPixelSize(R.dimen.padding_1dp));
                 view.setLayoutParams(layoutParams);
-                _layout.addView(view);
+                if (FormWrapper.getLayoutType() == 2) {
+                    linearLayout.addView(checkedTextView);
+                    if (i < (options.length() -1)) linearLayout.addView(view);
+                } else {
+                    _layout.addView(checkedTextView);
+                    _layout.addView(view);
+                }
 
             }
         } catch (JSONException e) {

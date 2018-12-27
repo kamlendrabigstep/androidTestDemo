@@ -45,7 +45,9 @@
         android:paddingBottom="@dimen/dimen_15dp"
         android:paddingTop="@dimen/dimen_10dp"
         android:layout_marginLeft="@dimen/dimen_15dp"
+        android:layout_marginStart="@dimen/dimen_15dp"
         android:layout_marginRight="@dimen/dimen_15dp"
+        android:layout_marginEnd="@dimen/dimen_15dp"
         android:background="@drawable/bottom_border_rounded_corner"
         android:id="@+id/selector_layout"
         android:orientation="horizontal"
@@ -57,7 +59,12 @@
             android:layout_weight="1"
             android:layout_gravity="center_vertical"
             android:id="@+id/view_label"
-            android:textSize="@dimen/size_14sp" />
+            android:textSize="@dimen/size_14sp"
+            android:paddingLeft="@dimen/dimen_5dp"
+            android:paddingStart="@dimen/dimen_5dp"
+            android:paddingRight="@dimen/dimen_5dp"
+            android:paddingEnd="@dimen/dimen_5dp"
+            />
 
         <EditText
             android:layout_width="match_parent"
