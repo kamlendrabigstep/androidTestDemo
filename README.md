@@ -33,12 +33,24 @@ Field | Attribute | Description
 || value | Value of the field
 || descriptin | Descriptin of the field, to more explaine the input specific terms
 || required | To validated(Not allowed empty if true) the field at application level, it can be true or false. It is                      false by default.
-|| __hasSubForm__ | If any field contains child form/field [like category >> sub-category] then make it true to render subForm. It can be true/false by default it is false. 
+|| __hasSubForm__ | If any field contains child form/field [like category >> sub-category] then make it true to render subForm. It can be true/false, by default it is false. 
 |TextField| inputType | Specific attribute of TextField element which allowed type of input[number, phone, location etc]
 || hint | Hint for editbox inputs for better user experience
 |Select| multiOptions | Option menus for select type field
-|DateTime| spinnerType | It can be true or false by default it is false. If ture it will render spinner view for date/time, otherwise calender view. 
-|| inputType |  *Date : For date only *Time : For time only *DateTime : For date and time both|
+|DateTime| spinnerType | It can be true or false, by default it is false. If ture it will render spinner view for date/time, otherwise calender view. 
+|| inputType |  *Date : For date only *Time : For time only *DateTime : For date and time both
+|| minDate |  To restrict minimum date
+|| maxDate |  To restrict maximum date
+|Checkbox|  | All common attributes are valid for checkbox element.
+|SwitchElement|  | All common attributes are valid for switch element.
+|FileElement| fileType | To restrict the populatuing specific files in gallery like photo, video etc. 
+|Heading|  | It just uses label and very useful to categories the fields. 
+|MultiSelect|  | It's layout is like grouped checkboxes which is useful when multiple choices for a single field. 
+||multiOptions | Option menus for MultiSelect type field 
+
+
+
+
 
 
 ### Demo Screenshots Of Form Layouts/ Elements / UI
