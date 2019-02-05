@@ -12,4 +12,5 @@
     <color name="lightest_background">#f1f1f1</color>
     <color name="color_000000">#000000</color>
     <color name="color_ffffff">#ffffff</color>
+    <color name="form_error">#ff0000</color>
 </resources>

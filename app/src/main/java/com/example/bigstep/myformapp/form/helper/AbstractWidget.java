@@ -24,7 +24,7 @@ public abstract class AbstractWidget {
 
     protected String _property;
     protected boolean isRequired;
-    protected String _displayText;
+    protected String _displayText, validationError;
     protected LinearLayout _layout;
 
     /**
@@ -33,7 +33,7 @@ public abstract class AbstractWidget {
      * @param name
      * @param required
      */
-    public AbstractWidget(Context context, String name, boolean required) {
+    public AbstractWidget(Context context, String name, boolean required, String validationMessage) {
 
         _layout = new LinearLayout(context);
         _layout.setLayoutParams(FormWrapper.defaultLayoutParams);
@@ -43,6 +43,7 @@ public abstract class AbstractWidget {
         isRequired = required;
         _displayText = name.replace("_", " ");
         _displayText = toTitleCase(_displayText);
+        validationError = validationMessage;
     }
 
 
@@ -143,5 +144,9 @@ public abstract class AbstractWidget {
      */
     public void setRequired(boolean isRequired) {
         this.isRequired = isRequired;
+    }
+
+    public String getValidationError() {
+        return validationError;
     }
 }

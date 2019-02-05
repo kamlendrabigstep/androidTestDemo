@@ -16,7 +16,6 @@ package com.example.bigstep.myformapp.form.fields;
 import android.app.Activity;
 import android.content.Context;
 import android.graphics.Typeface;
-import android.support.annotation.NonNull;
 import android.support.v7.widget.AppCompatAutoCompleteTextView;
 import android.text.Editable;
 import android.text.InputFilter;
@@ -27,30 +26,17 @@ import android.text.method.PasswordTransformationMethod;
 import android.view.Gravity;
 import android.view.View;
 import android.widget.AdapterView;
-import android.widget.ArrayAdapter;
 import android.widget.EditText;
-import android.widget.Filter;
-import android.widget.Filterable;
 import android.widget.TextView;
 
 import com.example.bigstep.myformapp.R;
+import com.example.bigstep.myformapp.adaptors.AutoCompleterAdapter;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
 import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 import com.example.bigstep.myformapp.utils.InputTypeUtil;
 
-import org.json.JSONArray;
-import org.json.JSONException;
 import org.json.JSONObject;
-
-import java.io.IOException;
-import java.io.InputStreamReader;
-import java.net.HttpURLConnection;
-import java.net.MalformedURLException;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.ArrayList;
-import java.util.Map;
 
 /**
  * @TextField is used to inflate the fields for the Edit text with the rich input types
@@ -63,12 +49,15 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     public static final String PLACES_API_BASE = "https://maps.googleapis.com/maps/api/place";
     private static final String TYPE_AUTOCOMPLETE = "/autocomplete";
     private static final String OUT_JSON = "/json";
+    private final String ELEMENT_TAG = "TextField_";
+    private final String LOCATION_ELEMENT_TAG = "TextField_";
     // Member Variables.
     private Context mContext;
     private EditText etFieldValue;
-    private AppCompatAutoCompleteTextView tvLocationField;
-    private String mFieldName;
+    private AppCompatAutoCompleteTextView actFieldValue;
+    private String mFieldName, autoCompleterURL;
     private JSONObject jsonObjectProperty;
+    private boolean isAutoComplete;
 
     /**
      * Public constructor to inflate form field For the edit text.
@@ -78,18 +67,13 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
      * @param jsonObjectProperty Json object of the selected property.
      * @param description        Description of the field.
      * @param hasValidator       True if the field has validation (Compulsory field).
-     * @param type               Type of the field.
      * @param inputType          Input Type of the field.
-     * @param widgets            List of FormWidget.
-     * @param isNeedToHideView   True if need to hide the inflated view.
      * @param value              Value of the field.
      */
     public TextField(Context context, String property, JSONObject jsonObjectProperty,
-                     String description, boolean hasValidator, String type, String inputType,
-                     ArrayList<AbstractWidget> widgets, Map<String, AbstractWidget> map,
-                     boolean isNeedToHideView, String value) {
+                     String description, boolean hasValidator, String inputType, String value) {
 
-        super(context, property, hasValidator);
+        super(context, property, hasValidator, jsonObjectProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initialize member variables.
         mContext = context;
@@ -102,7 +86,7 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
         // Inflate the field view layout.
         if (FormWrapper.getLayoutType() == 3) {
             inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_3, null);
-        } else if (FormWrapper.getLayoutType() == 2){
+        } else if (FormWrapper.getLayoutType() == 2) {
             inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_2, null);
         } else {
             inflateView = ((Activity) mContext).getLayoutInflater().inflate(R.layout.element_type_text_field_1, null);
@@ -112,10 +96,6 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
         inflateView.setTag(mFieldName);
         setValue(value);
         _layout.addView(inflateView);
-        if (isNeedToHideView) {
-            _layout.setTag(mFieldName);
-            _layout.setVisibility(View.GONE);
-        }
 
     }
 
@@ -132,10 +112,12 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
         tvLabel.setTypeface(Typeface.DEFAULT_BOLD);
         TextView tvDescription = configFieldView.findViewById(R.id.view_description);
         etFieldValue = configFieldView.findViewById(R.id.field_value);
-        tvLocationField = configFieldView.findViewById(R.id.location_field_value);
-        tvLocationField.setVisibility(View.GONE);
+        etFieldValue.setTag(ELEMENT_TAG + mFieldName);
+        actFieldValue = configFieldView.findViewById(R.id.location_field_value);
+        actFieldValue.setVisibility(View.GONE);
+        actFieldValue.setTag(LOCATION_ELEMENT_TAG + mFieldName);
         etFieldValue.setVisibility(View.VISIBLE);
-        etFieldValue.setTag("edittext_" + mFieldName);
+
 
         if (FormWrapper.getLayoutType() != 2 && jsonObjectProperty.optString("label") != null && !jsonObjectProperty.optString("label").isEmpty()) {
             tvLabel.setVisibility(View.VISIBLE);
@@ -168,6 +150,19 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
                     }
             });
         }
+        String hint = jsonObjectProperty.optString("hint");
+        if (jsonObjectProperty.optBoolean("autoCompleter", false)) {
+            isAutoComplete = true;
+            autoCompleterURL = jsonObjectProperty.optString("autoCompleterURL", PLACES_API_BASE
+                    + TYPE_AUTOCOMPLETE + OUT_JSON + "?key="
+                    + mContext.getResources().getString(R.string.places_api_key));
+            if (autoCompleterURL != null) {
+                actFieldValue.setVisibility(View.VISIBLE);
+                etFieldValue.setVisibility(View.GONE);
+                actFieldValue.setHint((hint != null) ? hint : jsonObjectProperty.optString("label"));
+                actFieldValue.setAdapter(new AutoCompleterAdapter(mContext, R.layout.element_type_heading, autoCompleterURL));
+            }
+        }
     }
 
     /***
@@ -193,8 +188,12 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
                 break;
             case InputTypeUtil.TYPE_CLASS_TEXT_LOCATION:
                 etFieldValue.setVisibility(View.GONE);
-                tvLocationField.setVisibility(View.VISIBLE);
-                tvLocationField.setAdapter(new GooglePlacesAutocompleteAdapter(mContext, R.layout.element_type_heading));
+                actFieldValue.setVisibility(View.VISIBLE);
+                autoCompleterURL = PLACES_API_BASE
+                        + TYPE_AUTOCOMPLETE + OUT_JSON + "?key="
+                        + mContext.getResources().getString(R.string.places_api_key);
+                actFieldValue.setAdapter(new AutoCompleterAdapter(mContext, R.layout.element_type_heading, autoCompleterURL));
+                isAutoComplete = true;
                 break;
             default:
                 etFieldValue.setGravity(Gravity.CENTER_VERTICAL);
@@ -213,7 +212,7 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     public void onTextChanged(CharSequence searchText, int start, int before, int count) {
 
         etFieldValue.setError(null);
-        tvLocationField.setError(null);
+        actFieldValue.setError(null);
 
     }
 
@@ -230,8 +229,8 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     @Override
     public String getValue() {
 
-        if (mFieldName.equals("location")) {
-            return tvLocationField.getText().toString();
+        if (isAutoComplete) {
+            return actFieldValue.getText().toString();
         } else {
             return etFieldValue.getText().toString();
         }
@@ -240,8 +239,8 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     @Override
     public void setValue(String value) {
 
-        if (mFieldName.equals("location")) {
-            tvLocationField.setText(value);
+        if (isAutoComplete) {
+            actFieldValue.setText(value);
         } else {
             WidgetLayoutParams.setEditText(etFieldValue, value);
         }
@@ -251,8 +250,8 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     public void setHint(String hint) {
         // Showing hint on the respective views..
         if (hint != null) {
-            if (mFieldName.equals("location")) {
-                tvLocationField.setHint(hint);
+            if (isAutoComplete) {
+                actFieldValue.setHint(hint);
             } else {
                 etFieldValue.setHint(hint);
             }
@@ -263,9 +262,9 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     public void setErrorMessage(String errorMessage) {
         // Showing error message on error view.
         if (errorMessage != null) {
-            if (mFieldName.equals("location")) {
-                tvLocationField.requestFocus();
-                tvLocationField.setError(errorMessage);
+            if (isAutoComplete) {
+                actFieldValue.requestFocus();
+                actFieldValue.setError(errorMessage);
             } else {
                 etFieldValue.requestFocus();
                 etFieldValue.setError(errorMessage);
@@ -277,129 +276,4 @@ public class TextField extends AbstractWidget implements TextWatcher, AdapterVie
     public void onClick(View view) {
 
     }
-
-    /**
-     * Method to get result list of the locations.
-     *
-     * @param input Entered location by the user.
-     * @return Returns the list of locations on the basis of input.
-     */
-    private ArrayList<String> locationAutoComplete(String input) {
-
-        ArrayList<String> resultList = null;
-
-        HttpURLConnection conn = null;
-        StringBuilder jsonResults = new StringBuilder();
-        try {
-            String sb = PLACES_API_BASE
-                    + TYPE_AUTOCOMPLETE + OUT_JSON + "?key="
-                    + mContext.getResources().getString(R.string.places_api_key)
-                    + "&input=" + URLEncoder.encode(input, "utf8");
-            // sb.append("&components=country:gr");
-            //           sb.append("&types=(cities)");
-
-            URL url = new URL(sb);
-
-            conn = (HttpURLConnection) url.openConnection();
-            InputStreamReader in = new InputStreamReader(conn.getInputStream());
-
-            // Load the results into a StringBuilder
-            int read;
-            char[] buff = new char[1024];
-            while ((read = in.read(buff)) != -1) {
-                jsonResults.append(buff, 0, read);
-            }
-        } catch (MalformedURLException e) {
-            return resultList;
-        } catch (IOException e) {
-            return resultList;
-        } finally {
-            if (conn != null) {
-                conn.disconnect();
-            }
-        }
-
-        try {
-
-            // Create a JSON object hierarchy from the results
-            JSONObject jsonObj = new JSONObject(jsonResults.toString());
-
-            JSONArray predsJsonArray = jsonObj.getJSONArray("predictions");
-            // Extract the Place descriptions from the results
-            resultList = new ArrayList<>(predsJsonArray.length());
-            resultList = new ArrayList<>(predsJsonArray.length());
-
-            for (int i = 0; i < predsJsonArray.length(); i++) {
-
-                JSONObject list = predsJsonArray.optJSONObject(i);
-                String value = list.optString("description");
-                resultList.add(value);
-            }
-        } catch (JSONException e) {
-            e.printStackTrace();
-        }
-
-        return resultList;
-    }
-
-    /**
-     * Class to suggest the locations on the basis of user entered string.
-     */
-    private class GooglePlacesAutocompleteAdapter extends ArrayAdapter<String> implements Filterable {
-
-        private ArrayList<String> resultList;
-
-        /**
-         * Public constructor to find the places.
-         *
-         * @param context            Context of calling class.
-         * @param textViewResourceId Resource id of the text view.
-         */
-        public GooglePlacesAutocompleteAdapter(Context context, int textViewResourceId) {
-            super(context, textViewResourceId);
-        }
-
-        @Override
-        public int getCount() {
-            return resultList.size();
-        }
-
-        @Override
-        public String getItem(int index) {
-            return resultList.get(index);
-        }
-
-        @NonNull
-        @Override
-        public Filter getFilter() {
-            Filter filter = new Filter() {
-                @Override
-                protected FilterResults performFiltering(CharSequence constraint) {
-                    FilterResults filterResults = new FilterResults();
-                    if (constraint != null) {
-                        // Retrieve the autocomplete results.
-                        resultList = locationAutoComplete(constraint.toString());
-
-                        // Assign the data to the FilterResults
-                        filterResults.values = resultList;
-                        filterResults.count = resultList.size();
-                    }
-
-                    return filterResults;
-                }
-
-                @Override
-                protected void publishResults(CharSequence constraint,
-                                              FilterResults results) {
-                    if (results != null && results.count > 0) {
-                        notifyDataSetChanged();
-                    } else {
-                        notifyDataSetInvalidated();
-                    }
-                }
-            };
-            return filter;
-        }
-    }
-
 }

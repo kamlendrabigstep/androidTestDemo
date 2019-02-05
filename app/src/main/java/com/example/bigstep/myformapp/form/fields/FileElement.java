@@ -37,6 +37,7 @@ import org.json.JSONObject;
 
 public class FileElement extends AbstractWidget implements View.OnClickListener {
 
+    private final String ELEMENT_TAG = "FILE_";
     private Context mContext;
     private View mConfigFieldView;
     private EditText etFieldValue;
@@ -55,7 +56,7 @@ public class FileElement extends AbstractWidget implements View.OnClickListener 
      * @param joProperty JSONObject Of the field.
      */
     public FileElement(Context context, final String name, JSONObject joProperty) {
-        super(context, name, joProperty.optBoolean("required", false));
+        super(context, name, joProperty.optBoolean("required", false), joProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initializing member variables.
         this.mContext = context;
@@ -124,7 +125,7 @@ public class FileElement extends AbstractWidget implements View.OnClickListener 
         tvError = mConfigFieldView.findViewById(R.id.error_view);
         // Showing the attachment picker/date picker options.
         etFieldValue.setVisibility(View.VISIBLE);
-
+        etFieldValue.setTag(ELEMENT_TAG + mFieldName);
         // Showing the right drawable icon on the field value view.
         if (mDrawableIcon != null) {
             mDrawableIcon.setColorFilter(new PorterDuffColorFilter(ContextCompat.getColor(mContext, R.color.light_gray),

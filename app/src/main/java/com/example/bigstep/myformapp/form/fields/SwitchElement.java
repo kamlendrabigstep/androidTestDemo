@@ -24,6 +24,7 @@ import android.widget.TextView;
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.listeners.OnRenderSubForm;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -34,27 +35,27 @@ import java.util.Iterator;
 import java.util.List;
 import java.util.Map;
 
-public class SwitchElement extends AbstractWidget {
+public class SwitchElement extends AbstractWidget implements OnRenderSubForm {
 
+    private final String ELEMENT_TAG = "SwitchElement_";
     private Context mContext;
     private String mFieldName;
     private Switch sElement;
     private int elementOrder = 0;
     private ArrayList<AbstractWidget> mFormWidgetList;
     private Map<String, AbstractWidget> mFormWidgetMap;
-    private AbstractWidget mFormWidget;
-    private FormWrapper mFormActivity;
+    private FormWrapper mFormWrapper;
 
-    public SwitchElement(Context context, String property, boolean hasValidator, JSONObject joProperty, ArrayList<AbstractWidget> widgets
+    public SwitchElement(Context context, FormWrapper formWrapper, String property, boolean hasValidator, JSONObject joProperty, ArrayList<AbstractWidget> widgets
             , Map<String, AbstractWidget> map) {
-        super(context, property, hasValidator);
+        super(context, property, hasValidator, joProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initialize member variables.
         mContext = context;
         mFieldName = property;
         mFormWidgetList = widgets;
         this.mFormWidgetMap = map;
-        mFormActivity = new FormWrapper(mContext);
+        this.mFormWrapper = formWrapper;
 
         // Inflate the field view layout.
         View inflateView;
@@ -81,11 +82,12 @@ public class SwitchElement extends AbstractWidget {
             tvLabel.setPadding(0, 0, 0, 0);
         }
         sElement = configFieldView.findViewById(R.id.sElement);
+        sElement.setTag(ELEMENT_TAG + mFieldName);
         sElement.setOnCheckedChangeListener(new CompoundButton.OnCheckedChangeListener() {
             @Override
             public void onCheckedChanged(CompoundButton buttonView, boolean isChecked) {
                 if (joProperty.optBoolean("hasSubForm")) {
-                    inflateSubForm(getValue());
+                    renderSubForm(getValue());
                 }
             }
         });
@@ -107,10 +109,46 @@ public class SwitchElement extends AbstractWidget {
     }
 
 
-    /**
-     * Method to set the order of the selected parent element.
-     */
-    public void setElementOrder() {
+
+    @Override
+    public void renderSubForm(String key) {
+        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
+        if (formObject == null) {
+            return;
+        }
+        updateWidgetOrder();
+        clearSubForm(mFieldName);
+        updateWidgetOrder();
+        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
+        if (subFormArray != null) {
+            String append = FormWrapper.getAttribByProperty(mFieldName, "append", null);
+            int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
+            for (int i = 0; i < subFormArray.length(); ++i) {
+                JSONObject fieldsObject = subFormArray.optJSONObject(i);
+                if (fieldsObject != null) {
+                    String name = fieldsObject.optString("name");
+                    String label = fieldsObject.optString("label");
+                    AbstractWidget mFormWidget = mFormWrapper.getWidget(mContext, name, fieldsObject, label, false, null, mFormWidgetList,
+                            mFormWidgetMap);
+                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
+                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
+                    try {
+                        mFormWidgetList.add(elementOrder + i + appendValue, mFormWidget);
+
+                    } catch (IndexOutOfBoundsException e) {
+                        Log.d("Exception  Adding", e.getMessage());
+                    }
+                    mFormWidgetMap.put(name, mFormWidget);
+                }
+            }
+        }
+        mFormWrapper.resetFormWrapper();
+        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName), (!key.equals("")) ? mFieldName + "_" + key : null, "multiOptions", 0);
+
+    }
+
+    @Override
+    public void updateWidgetOrder() {
         for (int i = 0; i < mFormWidgetList.size(); i++) {
             if (mFormWidgetList.get(i).getPropertyName().equals(mFieldName)) {
                 elementOrder = i;
@@ -119,19 +157,15 @@ public class SwitchElement extends AbstractWidget {
         }
     }
 
-    /**
-     * Method to remove the child element of the selected parent element.
-     *
-     * @param parentName, name of the selected element.
-     */
-    private void removeChild(String parentName) {
-        String append = FormWrapper.getAttribByProperty(parentName, "append", null);
+    @Override
+    public void clearSubForm(String name) {
+        String append = FormWrapper.getAttribByProperty(name, "append", null);
         int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
         JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
-        String child = FormWrapper.getRegistryByProperty(parentName, "child");
+        String child = FormWrapper.getRegistryByProperty(name, "child");
 
 
-        JSONObject multiChild = FormWrapper.getRegistryByProperty(parentName, "multiChild", "multicheckbox");
+        JSONObject multiChild = FormWrapper.getRegistryByProperty(name, "multiChild", "multicheckbox");
         if (multiChild != null) {
             Iterator<String> keys = multiChild.keys();
 
@@ -148,7 +182,7 @@ public class SwitchElement extends AbstractWidget {
                     mFormWidgetList.remove(keyOrder);
                 }
             }
-            FormWrapper.setMultiChild(parentName, "multiChild", multiChild);
+            FormWrapper.setMultiChild(name, "multiChild", multiChild);
         }
 
 
@@ -156,7 +190,7 @@ public class SwitchElement extends AbstractWidget {
             JSONArray subFormArray = formObject.optJSONArray(child);
             for (int i = subFormArray.length() - 1; i >= 0; --i) {
                 if (subFormArray.optJSONObject(i) != null && subFormArray.optJSONObject(i).optBoolean("hasSubForm", false)) {
-                    removeChild(subFormArray.optJSONObject(i).optString("name"));
+                    clearSubForm(subFormArray.optJSONObject(i).optString("name"));
                 }
                 try {
                     appendValue = (appendValue == 0) ? -1 : appendValue;
@@ -166,50 +200,5 @@ public class SwitchElement extends AbstractWidget {
                 }
             }
         }
-
-
-    }
-    /**
-     * Method to inflate the subForm view from the option selection.
-     *
-     * @param key Key of the selected item.
-     */
-    private void inflateSubForm(String key) {
-        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
-        if (formObject == null) {
-            return;
-        }
-        setElementOrder();
-        removeChild(mFieldName);
-        setElementOrder();
-        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
-        if (subFormArray != null) {
-            String append = FormWrapper.getAttribByProperty(mFieldName, "append", null);
-            int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
-            for (int i = 0; i < subFormArray.length(); ++i) {
-                JSONObject fieldsObject = subFormArray.optJSONObject(i);
-                if (fieldsObject != null) {
-                    String name = fieldsObject.optString("name");
-                    String label = fieldsObject.optString("label");
-                    mFormWidget = mFormActivity.getWidget(mContext, name, fieldsObject, label, false, null, mFormWidgetList,
-                            mFormWidgetMap);
-                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
-                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
-                    try {
-                        mFormWidgetList.add(elementOrder + i + appendValue, mFormWidget);
-
-                    } catch (IndexOutOfBoundsException e) {
-                        Log.d("Exception  Adding", e.getMessage());
-                    }
-                    mFormWidgetMap.put(name, mFormWidget);
-                }
-            }
-        }
-        FormWrapper._layout.removeAllViews();
-        for (int i = 0; i < mFormWidgetList.size(); i++) {
-            FormWrapper._layout.addView(mFormWidgetList.get(i).getView());
-        }
-        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName), (!key.equals("")) ? mFieldName + "_" + key : null, "multiOptions", 0);
-
     }
 }

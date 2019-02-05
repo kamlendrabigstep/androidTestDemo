@@ -43,23 +43,24 @@ import java.util.Map;
 
 
 /**
- * @FormWrapper is the main/parent class of the form by which we can render any kind of form
+ * @FormWrapper is the core class of the form by which we can render any kind of form
  * based on applied schema. For more flexibility we can extends/sub-class & override
- * and do whatever we want.
+ * and do whatever you want.
  */
 
 public class FormWrapper implements View.OnClickListener {
 
-    private static final String SCHEMA_KEY_TYPE = "type";
-    private static final String SCHEMA_KEY_CHECKBOX = "checkbox";
     public static final String SCHEMA_KEY_SELECT_UPPER = "Select";
     public static final String SCHEMA_KEY_SELECT = "select";
+    public static final String SCHEMA_KEY_HINT = "hint";
+    public static final LayoutParams defaultLayoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
+    private static final String SCHEMA_KEY_TYPE = "type";
+    private static final String SCHEMA_KEY_CHECKBOX = "checkbox";
     private static final String SCHEMA_KEY_TEXT = "text";
     private static final String SCHEMA_KEY_PASSWORD = "password";
     private static final String SCHEMA_KEY_LOCATION = "location";
     private static final String SCHEMA_KEY_TEXT_AREA = "textarea";
     private static final String SCHEMA_KEY_OPTIONS = "multiOptions";
-    public static final String SCHEMA_KEY_HINT = "hint";
     private static final String SCHEMA_KEY_FILE = "file";
     private static final String SCHEMA_KEY_RADIO = "Radio";
     private static final String SCHEMA_KEY_MULTI_CHECKBOX = "multicheckbox";
@@ -69,20 +70,15 @@ public class FormWrapper implements View.OnClickListener {
     private static final String SCHEMA_KEY_HIDDEN = "Hidden";
     private static final String SCHEMA_KEY_DUMMY = "dummy";
     private static final String SCHEMA_KEY_SWITCH_ELEMENT = "switch";
-    public static final LayoutParams defaultLayoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
     private static final LayoutParams defaultLayoutParamsWithMargins = WidgetLayoutParams.getFullWidthLayoutParams();
-
-
-    public static ArrayList<AbstractWidget> _widgets;
-    public static Map<String, AbstractWidget> widgetMap;
-    public static JSONObject formSchema;
-    public static LinearLayout _layout;
+    public  LinearLayout _layout;
+    private static JSONObject formSchema;
+    private static int mLayoutType = 1;
+    private ArrayList<AbstractWidget> elementWidgets;
     // Member variables.
-    public Context mContext;
-    protected Map<String, AbstractWidget> _map;
-    protected LinearLayout _container;
-    protected ScrollView _viewport;
-    public static int mLayoutType = 1;
+    private Context mContext;
+    private Map<String, AbstractWidget> widgetMap;
+    private LinearLayout wrapper;
 
     public FormWrapper(Context context) {
         mContext = context;
@@ -117,6 +113,7 @@ public class FormWrapper implements View.OnClickListener {
 
     /**
      * Getter of form schema
+     *
      * @return
      */
     public static JSONObject getFormSchema() {
@@ -125,6 +122,7 @@ public class FormWrapper implements View.OnClickListener {
 
     /**
      * Setter of form schema
+     *
      * @param form
      */
     public static void setFormSchema(JSONObject form) {
@@ -134,6 +132,7 @@ public class FormWrapper implements View.OnClickListener {
 
     /**
      * Updating given field's attribute to the field schema
+     *
      * @param propertyName
      * @param attributeName
      * @param attributeValue
@@ -187,7 +186,6 @@ public class FormWrapper implements View.OnClickListener {
                         if (subFormElements.optJSONObject(i).optBoolean("hasSubForm")) {
                             JSONObject childElement = new JSONObject();
                             childElement.put("parent", propertyName);
-                            //setRegistryByProperty(subFormElements.optJSONObject(i).optString("name"),childElement,null);
                             formSchema.putOpt(subFormElements.optJSONObject(i).optString("name"), childElement);
                         }
                     }
@@ -229,6 +227,7 @@ public class FormWrapper implements View.OnClickListener {
 
     /**
      * Setter for multiChild schema for the given field name.
+     *
      * @param propertyName
      * @param key
      * @param multiChild
@@ -246,6 +245,7 @@ public class FormWrapper implements View.OnClickListener {
 
     /**
      * Method is used to update the schema of multiOption of @MultiSelect widget.
+     *
      * @param multiChild
      * @param value
      * @param elementOrder
@@ -268,6 +268,24 @@ public class FormWrapper implements View.OnClickListener {
     }
 
     /**
+     * Getter for layout type
+     *
+     * @return
+     */
+    public static int getLayoutType() {
+        return mLayoutType;
+    }
+
+    /**
+     * Setter for layout type
+     *
+     * @param type
+     */
+    public void setLayoutType(int type) {
+        mLayoutType = type;
+    }
+
+    /**
      * parses a supplied schema of raw json data and creates widgets
      *
      * @param data - the raw json data as a String
@@ -281,9 +299,8 @@ public class FormWrapper implements View.OnClickListener {
             defaultLayoutParamsWithMargins.setMarginEnd(margin);
             defaultLayoutParamsWithMargins.setMarginStart(margin);
         }
-        _widgets = new ArrayList<>();
-        widgetMap = new HashMap<>();
-        _map = new LinkedHashMap<>();
+        elementWidgets = new ArrayList<>();
+        widgetMap = new LinkedHashMap<>();
 
 
         JSONArray formArray;
@@ -294,12 +311,11 @@ public class FormWrapper implements View.OnClickListener {
 
 
         // -- create the layout
+        wrapper = new LinearLayout(context);
+        wrapper.setOrientation(LinearLayout.VERTICAL);
+        wrapper.setLayoutParams(FormWrapper.defaultLayoutParams);
 
-        _container = new LinearLayout(context);
-        _container.setOrientation(LinearLayout.VERTICAL);
-        _container.setLayoutParams(FormWrapper.defaultLayoutParams);
-
-        _viewport = new ScrollView(context);
+        ScrollView _viewport = new ScrollView(context);
         _viewport.setLayoutParams(FormWrapper.defaultLayoutParams);
 
         _layout = new LinearLayout(context);
@@ -307,14 +323,14 @@ public class FormWrapper implements View.OnClickListener {
         _layout.setLayoutParams(FormWrapper.defaultLayoutParams);
 
 
-        for (Map.Entry<String, AbstractWidget> entry : _map.entrySet()) {
+        for (Map.Entry<String, AbstractWidget> entry : widgetMap.entrySet()) {
             _layout.addView(entry.getValue().getView());
         }
         _viewport.addView(_layout);
-        _container.addView(_viewport);
-        _container.setId(R.id.form_layout);
+        wrapper.addView(_viewport);
+        wrapper.setId(R.id.form_layout);
 
-        return _container;
+        return wrapper;
     }
 
     @Override
@@ -342,42 +358,40 @@ public class FormWrapper implements View.OnClickListener {
 
 
             widget = getWidget(context, fieldName, jsonObject, fieldLabel, required,
-                    fieldDescription, _widgets, _map);
+                    fieldDescription, elementWidgets, widgetMap);
 
             if (widget == null) continue;
 
             if (jsonObject.has(FormWrapper.SCHEMA_KEY_HINT))
                 widget.setHint(jsonObject.optString(FormWrapper.SCHEMA_KEY_HINT));
 
-            _widgets.add(widget);
-            _map.put(fieldName, widget);
+            elementWidgets.add(widget);
+            widgetMap.put(fieldName, widget);
 
         }
 
     }
 
     /**
-     * this method preps the data and saves it
-     * if there is a problem w/ creating the json string, the method fails
-     * loop through each mFormWidget and set a property on a json object to the value of the mFormWidget's getValue() method
+     * @save method is used to validate form at application level and
+     * generate params if success else return null.
      */
     public HashMap<String, String> save() {
         AbstractWidget widget;
         HashMap<String, String> params = new HashMap<>();
 
         boolean success = true;
-        if (_widgets != null) {
-            for (int i = 0; i < _widgets.size(); i++) {
-                widget = _widgets.get(i);
+        if (elementWidgets != null) {
+            for (int i = 0; i < elementWidgets.size(); i++) {
+                widget = elementWidgets.get(i);
 
-                if (!widget.getPropertyName().equals("searchGuests")
-                        && !widget.getPropertyName().equals("toValues")) {
+                if (!widget.getPropertyName().equals("toValues")) {
                     if (!widget.getPropertyName().equals("text")) {
                         if (widget.isRequired() && widget.getValue().isEmpty() &&
                                 widget.getView().getVisibility() == View.VISIBLE) {
 
                             success = false;
-                            widget.setErrorMessage(mContext.getResources().getString(R.string.widget_error_msg));
+                            widget.setErrorMessage(widget.getValidationError());
 
                         } else {
                             params.put(widget.getPropertyName(), widget.getValue());
@@ -401,12 +415,12 @@ public class FormWrapper implements View.OnClickListener {
      * @param validationMessages
      * @return
      */
-    public boolean validateForm(JSONObject validationMessages) {
+    public boolean validate(JSONObject validationMessages) {
 
         AbstractWidget widget;
         boolean error = false;
-        for (int i = 0; i < _widgets.size(); i++) {
-            widget = _widgets.get(i);
+        for (int i = 0; i < elementWidgets.size(); i++) {
+            widget = elementWidgets.get(i);
             String fieldName = widget.getPropertyName();
 
             if (validationMessages.has(fieldName)) {
@@ -423,9 +437,18 @@ public class FormWrapper implements View.OnClickListener {
         return error;
     }
 
-
     /**
-     * factory method for actually instantiating widgets
+     * The factory method for generating the widget of the given attributes.
+     *
+     * @param context
+     * @param name
+     * @param property
+     * @param label
+     * @param hasValidator
+     * @param description
+     * @param _widgets
+     * @param _map
+     * @return the widget of the given type of field.
      */
 
     public AbstractWidget getWidget(Context context, String name, JSONObject property, String label, boolean hasValidator, String description, ArrayList<AbstractWidget> _widgets,
@@ -442,15 +465,13 @@ public class FormWrapper implements View.OnClickListener {
                 case FormWrapper.SCHEMA_KEY_TEXT:
                 case FormWrapper.SCHEMA_KEY_LOCATION:
                     value = property.optString("value");
-                    return new TextField(context, name, property, description, hasValidator, type,
-                            property.optString("inputType"), _widgets, _map,
-                            false, value);
+                    return new TextField(context, name, property, description, hasValidator, property.optString("inputType"), value);
 
 
                 case FormWrapper.SCHEMA_KEY_CHECKBOX:
-                    return new CheckBox(context, property, name, label, hasValidator, property.optInt("value"), _widgets, _map);
+                    return new CheckBox(context, this, property, name, label, hasValidator, property.optInt("value"), _widgets, _map);
                 case FormWrapper.SCHEMA_KEY_SWITCH_ELEMENT:
-                    return new SwitchElement(context, property.optString("name"), hasValidator, property, _widgets, _map);
+                    return new SwitchElement(context, this, property.optString("name"), hasValidator, property, _widgets, _map);
 
                 case FormWrapper.SCHEMA_KEY_FILE:
                     return new FileElement(context, name, property);
@@ -462,7 +483,7 @@ public class FormWrapper implements View.OnClickListener {
                         jsonObject = convertToJsonObject(jsonArray);
                     }
                     if (jsonObject != null && jsonObject.length() != 0) {
-                        return new Select(context, name, jsonObject, label, hasValidator,
+                        return new Select(context, this, name, jsonObject, label, hasValidator,
                                 description, property);
                     }
 
@@ -475,7 +496,7 @@ public class FormWrapper implements View.OnClickListener {
                         jsonObject = convertToJsonObject(jsonArray);
                     }
                     if (jsonObject != null && jsonObject.length() != 0) {
-                        MultiSelect formMultiCheckBox = new MultiSelect(context, name, jsonObject, label, hasValidator, description, _widgets,
+                        MultiSelect formMultiCheckBox = new MultiSelect(context, this, name, jsonObject, label, hasValidator, description, _widgets,
                                 _map);
                         formMultiCheckBox.setValue(property.optString("value"));
                         return formMultiCheckBox;
@@ -489,8 +510,8 @@ public class FormWrapper implements View.OnClickListener {
                             jsonObject = convertToJsonObject(jsonArray);
                         }
                         if (jsonObject != null && jsonObject.length() != 0) {
-                            return new Select(context, name, jsonObject, label, hasValidator, description,
-                                    property, _widgets, _map, false);
+                            return new Select(context, this, name, jsonObject, label, hasValidator, description,
+                                    property, false);
                         }
                     }
                     break;
@@ -500,13 +521,12 @@ public class FormWrapper implements View.OnClickListener {
                     return new DateTime(context, name, property);
 
                 case FormWrapper.SCHEMA_KEY_HIDDEN:
-                    return new CheckBox(context, property, name, label, hasValidator, property.optInt("value"), _widgets, _map);
+                    return new CheckBox(context, this, property, name, label, hasValidator, property.optInt("value"), _widgets, _map);
 
                 case FormWrapper.SCHEMA_KEY_TEXT_AREA:
 
                     value = property.optString("value");
-                    return new TextField(context, name, property, description, hasValidator, type,
-                            property.optString("inputType"), _widgets, _map, false, value);
+                    return new TextField(context, name, property, description, hasValidator, property.optString("inputType"), value);
                 case FormWrapper.SCHEMA_KEY_DUMMY:
                     return new Heading(context, name, label, property);
 
@@ -540,19 +560,24 @@ public class FormWrapper implements View.OnClickListener {
         }
     }
 
-    /**
-     * Setter for layout type
-     * @param type
-     */
-    public void setLayoutType(int type) {
-        mLayoutType = type;
+    public View getFormWrapper() {
+        return wrapper;
     }
 
-    /**
-     * Getter for layout type
-     * @return
-     */
-    public static int getLayoutType() {
-        return mLayoutType;
+    public void resetFormWrapper() {
+        if (elementWidgets != null) {
+            _layout.removeAllViews();
+            for (int i = 0; i < elementWidgets.size(); i++) {
+                _layout.addView(elementWidgets.get(i).getView());
+            }
+        }
+    }
+
+    public ArrayList<AbstractWidget> getElementWidgets() {
+        return elementWidgets;
+    }
+
+    public Map<String, AbstractWidget> getWidgetsMap() {
+        return widgetMap;
     }
 }

@@ -36,6 +36,7 @@ import android.widget.TextView;
 import com.example.bigstep.myformapp.R;
 import com.example.bigstep.myformapp.form.helper.FormWrapper;
 import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.listeners.OnRenderSubForm;
 import com.example.bigstep.myformapp.ui.WidgetLayoutParams;
 
 import org.json.JSONArray;
@@ -51,9 +52,10 @@ import java.util.Map;
  *  and tick box if checked.
  */
 
-public class MultiSelect extends AbstractWidget {
+public class MultiSelect extends AbstractWidget implements OnRenderSubForm {
 
     // Member variables.
+    private final String ELEMENT_TAG = "MultiSelect_";
     private Context mContext;
     private TextView tvLabel;
     private ArrayAdapter<String> checkBoxAdapter;
@@ -63,8 +65,9 @@ public class MultiSelect extends AbstractWidget {
     private Map<String, AbstractWidget> mFormWidgetMap;
     private int elementOrder = 0;
     private String mFieldName;
-    private FormWrapper mFormActivity;
-    private AbstractWidget mFormWidget;
+    private FormWrapper mFormWrapper;
+    private boolean isChecked;
+    private String keyName;
 
     /**
      * Public constructor to inflate form field For the multi checkbox items.
@@ -77,9 +80,9 @@ public class MultiSelect extends AbstractWidget {
      * @param description  Description of the field.
      */
     @RequiresApi(api = Build.VERSION_CODES.JELLY_BEAN)
-    public MultiSelect(Context context, String property, JSONObject options, String label, boolean hasValidator,
+    public MultiSelect(Context context, FormWrapper formWrapper, String property, JSONObject options, String label, boolean hasValidator,
                        String description, ArrayList<AbstractWidget> widgets, Map<String, AbstractWidget> map) {
-        super(context, property, hasValidator);
+        super(context, property, hasValidator, context.getResources().getString(R.string.widget_error_msg));
 
         // Initializing member variables.
         mContext = context;
@@ -95,7 +98,7 @@ public class MultiSelect extends AbstractWidget {
         this.mFormWidgetList = widgets;
         this.mFormWidgetMap = map;
         this.mFieldName = property;
-        mFormActivity = new FormWrapper(mContext);
+        this.mFormWrapper = formWrapper;
 
         // Showing description text view if description is not empty.
         if (description != null && !description.isEmpty()) {
@@ -166,6 +169,7 @@ public class MultiSelect extends AbstractWidget {
         } catch (JSONException e) {
             e.printStackTrace();
         }
+        _layout.setTag(ELEMENT_TAG + mFieldName);
 
         // Listener to mark check box as checked/unchecked.
         if (mCheckedTextViewList != null && mCheckedTextViewList.size() > 0) {
@@ -178,7 +182,8 @@ public class MultiSelect extends AbstractWidget {
                         try {
                             boolean checked = mCheckedTextViewList
                                     .get(finalI).isChecked();
-                            inflateSubFormView(checkBoxAdapter.getItem(finalI), !checked);
+                            isChecked = !checked;
+                            renderSubForm(checkBoxAdapter.getItem(finalI));
                             mCheckedTextViewList.get(finalI).setChecked(!checked);
                         } catch (Exception e) {
                             e.printStackTrace();
@@ -268,75 +273,6 @@ public class MultiSelect extends AbstractWidget {
 
 
     /**
-     * Method to set the order of the selected parent element.
-     */
-    public void setElementOrder() {
-        for (int i = 0; i < mFormWidgetList.size(); i++) {
-            if (mFormWidgetList.get(i).getPropertyName().equals(mFieldName)) {
-                elementOrder = i;
-                break;
-            }
-        }
-    }
-
-    /**
-     * Method to remove the child element of the selected parent element.
-     *
-     * @param parentName, name of the selected element.
-     */
-    private void removeChild(String parentName, String keyName) {
-        JSONObject multiChild = FormWrapper.getRegistryByProperty(parentName, "multiChild", "multicheckbox");
-        if (multiChild != null) {
-            int order = multiChild.optInt(keyName, -1);
-            if (order > 0) {
-                mFormWidgetList.remove(order);
-            }
-            multiChild.remove(keyName);
-            multiChild = FormWrapper.updateMultiChild(multiChild, -1, order);
-            FormWrapper.setMultiChild(parentName, "multiChild", multiChild);
-        }
-    }
-
-    /**
-     * Method to inflate the subForm view from the option selection.
-     *
-     * @param key Key of the selected item.
-     * @param isChecked boolean
-     */
-    private void inflateSubFormView(String key, boolean isChecked) {
-        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
-        setElementOrder();
-
-        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
-        if (subFormArray != null && isChecked) {
-            for (int i = 0; i < subFormArray.length(); ++i) {
-                JSONObject fieldsObject = subFormArray.optJSONObject(i);
-                if (fieldsObject != null) {
-                    String name = fieldsObject.optString("name");
-                    String label = fieldsObject.optString("label");
-                    mFormWidget = mFormActivity.getWidget(mContext, name, fieldsObject, label, false, null, mFormWidgetList,
-                            mFormWidgetMap);
-                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
-                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
-                    try {
-                        mFormWidgetList.add(elementOrder + i + 1, mFormWidget);
-                        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName), (!key.equals("")) ? mFieldName + "_" + key : null, "MultiCheckbox", elementOrder + i + 1);
-                    } catch (IndexOutOfBoundsException e) {
-                        Log.d("Exception  Adding", e.getMessage());
-                    }
-                    mFormWidgetMap.put(name, mFormWidget);
-                }
-            }
-        } else {
-            removeChild(mFieldName, mFieldName + "_" + key);
-        }
-        FormWrapper._layout.removeAllViews();
-        for (int i = 0; i < mFormWidgetList.size(); i++) {
-            FormWrapper._layout.addView(mFormWidgetList.get(i).getView());
-        }
-
-    }
-    /**
      * Method to get List Drawable, which will set onto checked text view.
      *
      * @param context Context of calling class.
@@ -356,4 +292,60 @@ public class MultiSelect extends AbstractWidget {
     }
 
 
+    @Override
+    public void renderSubForm(String key) {
+        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
+        updateWidgetOrder();
+
+        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
+        if (subFormArray != null && isChecked) {
+            for (int i = 0; i < subFormArray.length(); ++i) {
+                JSONObject fieldsObject = subFormArray.optJSONObject(i);
+                if (fieldsObject != null) {
+                    String name = fieldsObject.optString("name");
+                    String label = fieldsObject.optString("label");
+                    AbstractWidget mFormWidget = mFormWrapper.getWidget(mContext, name, fieldsObject, label, false, null, mFormWidgetList,
+                            mFormWidgetMap);
+                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
+                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
+                    try {
+                        mFormWidgetList.add(elementOrder + i + 1, mFormWidget);
+                        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName), (!key.equals("")) ? mFieldName + "_" + key : null, "MultiCheckbox", elementOrder + i + 1);
+                    } catch (IndexOutOfBoundsException e) {
+                        Log.d("Exception  Adding", e.getMessage());
+                    }
+                    mFormWidgetMap.put(name, mFormWidget);
+                }
+            }
+        } else {
+            keyName = mFieldName + "_" + key;
+            clearSubForm(mFieldName);
+        }
+        mFormWrapper.resetFormWrapper();
+
+    }
+
+    @Override
+    public void updateWidgetOrder() {
+        for (int i = 0; i < mFormWidgetList.size(); i++) {
+            if (mFormWidgetList.get(i).getPropertyName().equals(mFieldName)) {
+                elementOrder = i;
+                break;
+            }
+        }
+    }
+
+    @Override
+    public void clearSubForm(String name) {
+        JSONObject multiChild = FormWrapper.getRegistryByProperty(name, "multiChild", "multicheckbox");
+        if (multiChild != null) {
+            int order = multiChild.optInt(keyName, -1);
+            if (order > 0) {
+                mFormWidgetList.remove(order);
+            }
+            multiChild.remove(keyName);
+            multiChild = FormWrapper.updateMultiChild(multiChild, -1, order);
+            FormWrapper.setMultiChild(name, "multiChild", multiChild);
+        }
+    }
 }

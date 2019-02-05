@@ -11,16 +11,28 @@ package com.example.bigstep.myformapp.listeners;
  *   source code.
  */
 
-
 /**
- * A listener to handle media element events at view level.
+ * This is all about handling sub-forms
  */
-public interface OnRequestMediaListener {
+public interface OnRenderSubForm {
+
     /**
-     * Requesting for media when picker type element has been clicked.
+     * Rendering the sub-form of the respective parent element having
+     * selected key as current value.
      *
-     * @param mediaType
-     * @param fieldName
+     * @param key
      */
-    void onRequestMedia(String mediaType, String fieldName);
+    void renderSubForm(String key);
+
+    /**
+     * Updating the current order of the widget
+     */
+    void updateWidgetOrder();
+
+    /**
+     * Removing the sub-form widgets on any change in the parent element{@name}.
+     *
+     * @param name
+     */
+    void clearSubForm(String name);
 }

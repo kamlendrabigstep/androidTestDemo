@@ -18,8 +18,8 @@ import java.util.HashMap;
 import java.util.Map;
 
 /**
- *  A class which has all possible element/input types for the any kind of form
- *  which will be render by this.
+ * A class which has all possible element/input types for the any kind of form
+ * which will be render by this.
  */
 
 public class InputTypeUtil {
@@ -28,7 +28,7 @@ public class InputTypeUtil {
     public static final int TYPE_CLASS_DATE_TIME = 912;
     public static final int TYPE_CLASS_DATE = 913;
     public static final int TYPE_CLASS_TIME = 914;
-    private static final Map<String, Integer> inputTypes = new HashMap< String,Integer>(){
+    private static final Map<String, Integer> inputTypes = new HashMap<String, Integer>() {
         {
             put("text", InputType.TYPE_CLASS_TEXT);
             put("textarea", TYPE_CLASS_TEXT_AREA);
@@ -52,6 +52,7 @@ public class InputTypeUtil {
 
     /**
      * Method to get input/element actual constant
+     *
      * @param inputType
      * @return int input/element type constant
      */
@@ -59,4 +60,6 @@ public class InputTypeUtil {
         Integer etType = inputTypes.get(inputType.toLowerCase());
         return (etType != null) ? etType : InputType.TYPE_CLASS_TEXT;
     }
+
+
 }

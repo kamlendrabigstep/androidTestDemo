@@ -34,6 +34,7 @@ import org.json.JSONObject;
  */
 public class Heading extends AbstractWidget {
 
+    private final String ELEMENT_TAG = "HEADING_";
     public static final LinearLayout.LayoutParams viewParams = WidgetLayoutParams.
             getCustomWidthHeightLayoutParams(ViewGroup.LayoutParams.MATCH_PARENT, 1);
     protected TextView _label;
@@ -48,7 +49,7 @@ public class Heading extends AbstractWidget {
      * @param jsonObject
      */
     public Heading(final Context context, final String property, String label, final JSONObject jsonObject) {
-        super(context, property, false);
+        super(context, property, false, null);
 
         LinearLayout.LayoutParams layoutParams = WidgetLayoutParams.getFullWidthLayoutParams();
         layoutParams.setMargins(context.getResources().getDimensionPixelSize(R.dimen.dimen_5dp),
@@ -64,6 +65,7 @@ public class Heading extends AbstractWidget {
                 context.getResources().getDimensionPixelSize(R.dimen.padding_1dp));
         dividerView.setLayoutParams(dividerLayoutParams);
         addView(context, label);
+        _label.setTag(ELEMENT_TAG + property);
 
     }
 

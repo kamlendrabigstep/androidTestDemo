@@ -27,10 +27,11 @@ import android.widget.EditText;
 import android.widget.TextView;
 
 import com.example.bigstep.myformapp.R;
-import com.example.bigstep.myformapp.form.helper.FormWrapper;
-import com.example.bigstep.myformapp.form.helper.AbstractWidget;
-import com.example.bigstep.myformapp.model.Option;
 import com.example.bigstep.myformapp.adaptors.OptionAdapter;
+import com.example.bigstep.myformapp.form.helper.AbstractWidget;
+import com.example.bigstep.myformapp.form.helper.FormWrapper;
+import com.example.bigstep.myformapp.listeners.OnRenderSubForm;
+import com.example.bigstep.myformapp.model.Option;
 
 import org.json.JSONArray;
 import org.json.JSONObject;
@@ -39,17 +40,17 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
-import java.util.Map;
 
 /**
- * FormMultiOptions is used to inflate the view for the radio buttons and spinner item which contains the multi-options.
- * Bottom sheet view is used to show the multi options.
+ * @Select is used to inflate the view for the radio buttons and spinner item which contains the multi-options.
+ * Bottom sheet view is used to show the options.
  */
 
-public class Select extends AbstractWidget implements View.OnClickListener {
+public class Select extends AbstractWidget implements View.OnClickListener, OnRenderSubForm {
 
 
     //Member variables.
+    private final String ELEMENT_TAG = "Select_";
     private Context mContext;
     private LayoutInflater mLayoutInflater;
     private EditText etFieldValue;
@@ -60,33 +61,33 @@ public class Select extends AbstractWidget implements View.OnClickListener {
     private String mFieldName, mFieldValue = "";
     private JSONObject jsonObjectOptions, joProperty;
     private ArrayList<AbstractWidget> mFormWidgetList;
-    private Map<String, AbstractWidget> mFormWidgetMap;
-    private AbstractWidget mFormWidget;
-    private FormWrapper mFormActivity;
     private boolean mIsOptionWithIcon = false;
     private int elementOrder = 0;
+    private FormWrapper mFormWrapper;
 
 
     /**
      * Public constructor to inflate form field For the radio button items.
      *
-     * @param context               Context of calling class.
-     * @param property              Property of the field.
-     * @param options               Object with multi options.
-     * @param label                 Label of the field.
-     * @param hasValidator          True if the field has validation (Compulsory field).
-     * @param description           Description of the field.
-     * @param jsonObjectProperty    Json object of the selected property.
+     * @param context            Context of calling class.
+     * @param formWrapper        Forms container instance
+     * @param property           Property of the field.
+     * @param options            Object with multi options.
+     * @param label              Label of the field.
+     * @param hasValidator       True if the field has validation (Compulsory field).
+     * @param description        Description of the field.
+     * @param jsonObjectProperty Json object of the selected property.
      */
-    public Select(final Context context, String property, JSONObject options, String label,
+    public Select(final Context context, FormWrapper formWrapper, String property, JSONObject options, String label,
                   boolean hasValidator, String description, JSONObject jsonObjectProperty) {
-        super(context, property, hasValidator);
+        super(context, property, hasValidator, jsonObjectProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initializing member variables.
         mContext = context;
         mFieldName = property;
         jsonObjectOptions = options;
         this.joProperty = jsonObjectProperty;
+        this.mFormWrapper = formWrapper;
 
         initializeConstructorValues(label, description);
 
@@ -95,32 +96,29 @@ public class Select extends AbstractWidget implements View.OnClickListener {
     /**
      * Public constructor to inflate form field For the Spinner items.
      *
-     * @param context               Context of calling class.
-     * @param property              Property of the field.
-     * @param options               Object with multi options.
-     * @param label                 Label of the field.
-     * @param hasValidator          True if the field has validation (Compulsory field).
-     * @param description           Description of the field.
-     * @param jsonObjectProperty    Json object of the selected property.
-     * @param widgets               List of FormWidget.
-     * @param map                   Map of field name and formWidget.
-     * @param isOptionWithIcon      True if need to show options with the icon.
+     * @param context            Context of calling class.
+     * @param formWrapper        Forms container instance
+     * @param property           Property of the field.
+     * @param options            Object with multi options.
+     * @param label              Label of the field.
+     * @param hasValidator       True if the field has validation (Compulsory field).
+     * @param description        Description of the field.
+     * @param jsonObjectProperty Json object of the selected property.
+     * @param isOptionWithIcon   True if need to show options with the icon.
      */
-    public Select(final Context context, String property, JSONObject options, String label,
-                  boolean hasValidator, String description, JSONObject jsonObjectProperty, ArrayList<AbstractWidget> widgets,
-                  Map<String, AbstractWidget> map, boolean isOptionWithIcon) {
+    public Select(final Context context, FormWrapper formWrapper, String property, JSONObject options, String label,
+                  boolean hasValidator, String description, JSONObject jsonObjectProperty, boolean isOptionWithIcon) {
 
-        super(context, property, hasValidator);
+        super(context, property, hasValidator, jsonObjectProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initializing member variables.
         this.mContext = context;
         this.mFieldName = property;
         this.jsonObjectOptions = options;
         this.joProperty = jsonObjectProperty;
-        this.mFormWidgetList = widgets;
-        this.mFormWidgetMap = map;
+        this.mFormWrapper = formWrapper;
+        this.mFormWidgetList = mFormWrapper.getElementWidgets();
         this.mIsOptionWithIcon = isOptionWithIcon;
-        mFormActivity = new FormWrapper(mContext);
 
         initializeConstructorValues(label, description);
     }
@@ -165,7 +163,6 @@ public class Select extends AbstractWidget implements View.OnClickListener {
                 && joProperty.optString("value") != null && !joProperty.optString("value").isEmpty()) {
             String value = joProperty.optString("value");
             etFieldValue.setText(jsonObjectOptions.optString(value));
-            etFieldValue.setTag(value);
             mFieldValue = value;
         }
 
@@ -183,7 +180,6 @@ public class Select extends AbstractWidget implements View.OnClickListener {
             public void onItemClick(Option item, int position) {
                 mBottomSheetDialog.dismiss();
                 etFieldValue.setText(item.getName());
-                etFieldValue.setTag(item.getKey());
                 tvError.setError(null);
                 tvError.setVisibility(View.GONE);
                 // Not performing any action when the same option is selected.
@@ -196,7 +192,7 @@ public class Select extends AbstractWidget implements View.OnClickListener {
                             || joProperty.optString("type").equals(FormWrapper.SCHEMA_KEY_SELECT_UPPER))) {
 
                         if (joProperty.optBoolean("hasSubForm", false)) {
-                            inflateSubFormView(item.getKey());
+                            renderSubForm(item.getKey());
                         }
                     }
                 }
@@ -227,6 +223,7 @@ public class Select extends AbstractWidget implements View.OnClickListener {
         etFieldValue.setOnClickListener(this);
         configFieldView.findViewById(R.id.form_main_view).setOnClickListener(this);
 
+        etFieldValue.setTag(ELEMENT_TAG + mFieldName);
         // Setting up data in views.
         tvLabel.setText(label);
 
@@ -253,9 +250,8 @@ public class Select extends AbstractWidget implements View.OnClickListener {
 
     @Override
     public String getValue() {
-
         // Returning field value.
-        return (etFieldValue != null && etFieldValue.getTag() != null ? etFieldValue.getTag().toString() : "");
+        return mFieldValue;
     }
 
     @Override
@@ -265,7 +261,6 @@ public class Select extends AbstractWidget implements View.OnClickListener {
         if (value != null && etFieldValue != null && jsonObjectOptions != null
                 && jsonObjectOptions.length() > 0) {
             etFieldValue.setText(getLabelFromKey(value));
-            etFieldValue.setTag(value);
             mFieldValue = value;
         }
     }
@@ -294,8 +289,7 @@ public class Select extends AbstractWidget implements View.OnClickListener {
                 recyclerView.setHasFixedSize(true);
                 recyclerView.setLayoutManager(new LinearLayoutManager(mContext));
                 recyclerView.setAdapter(mSheetAdapter);
-                mSheetAdapter.setDefaultKey(etFieldValue.getTag() != null
-                        ? etFieldValue.getTag().toString() : null);
+                mSheetAdapter.setDefaultKey(mFieldValue);
                 mBottomSheetDialog = new BottomSheetDialog(mContext);
                 mBottomSheetDialog.setContentView(inflateView);
                 mBottomSheetDialog.show();
@@ -305,10 +299,49 @@ public class Select extends AbstractWidget implements View.OnClickListener {
         }
     }
 
-    /**
-     * Method to set the order of the selected parent element.
-     */
-    public void setElementOrder() {
+
+    @Override
+    public void renderSubForm(String key) {
+        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
+        if (formObject == null) {
+            return;
+        }
+        AbstractWidget mFormWidget;
+        // setting the current order of the widget
+        updateWidgetOrder();
+        clearSubForm(mFieldName);
+        // Update this widget order after deleting it's child form
+        updateWidgetOrder();
+        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
+        if (subFormArray != null) {
+            String append = FormWrapper.getAttribByProperty(mFieldName, "append", null);
+            int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
+            for (int i = 0; i < subFormArray.length(); ++i) {
+                JSONObject fieldsObject = subFormArray.optJSONObject(i);
+                if (fieldsObject != null) {
+                    String name = fieldsObject.optString("name");
+                    String label = fieldsObject.optString("label");
+                    mFormWidget = mFormWrapper.getWidget(mContext, name, fieldsObject, label, false,
+                            null, mFormWidgetList, mFormWrapper.getWidgetsMap());
+                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
+                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
+                    try {
+                        mFormWrapper.getElementWidgets().add(elementOrder + i + appendValue, mFormWidget);
+
+                    } catch (IndexOutOfBoundsException e) {
+                        Log.d("Exception  Adding", e.getMessage());
+                    }
+                    mFormWrapper.getWidgetsMap().put(name, mFormWidget);
+                }
+            }
+        }
+        mFormWrapper.resetFormWrapper();
+        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName),
+                (!key.equals("")) ? mFieldName + "_" + key : null, "multiOptions", 0);
+    }
+
+    @Override
+    public void updateWidgetOrder() {
         for (int i = 0; i < mFormWidgetList.size(); i++) {
             if (mFormWidgetList.get(i).getPropertyName().equals(mFieldName)) {
                 elementOrder = i;
@@ -317,19 +350,16 @@ public class Select extends AbstractWidget implements View.OnClickListener {
         }
     }
 
-    /**
-     * Method to remove the child element of the selected parent element.
-     *
-     * @param parentName, name of the selected element.
-     */
-    private void removeChild(String parentName) {
-        String append = FormWrapper.getAttribByProperty(parentName, "append", null);
+    @Override
+    public void clearSubForm(String name) {
+        String append = FormWrapper.getAttribByProperty(name, "append", null);
         int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
         JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
-        String child = FormWrapper.getRegistryByProperty(parentName, "child");
+        String child = FormWrapper.getRegistryByProperty(name, "child");
 
 
-        JSONObject multiChild = FormWrapper.getRegistryByProperty(parentName, "multiChild", "multicheckbox");
+        JSONObject multiChild = FormWrapper.getRegistryByProperty(name, "multiChild", "multicheckbox");
+        //TODO, Need To Optimize The Code
         if (multiChild != null) {
             Iterator<String> keys = multiChild.keys();
 
@@ -346,7 +376,7 @@ public class Select extends AbstractWidget implements View.OnClickListener {
                     mFormWidgetList.remove(keyOrder);
                 }
             }
-            FormWrapper.setMultiChild(parentName, "multiChild", multiChild);
+            FormWrapper.setMultiChild(name, "multiChild", multiChild);
         }
 
 
@@ -354,7 +384,7 @@ public class Select extends AbstractWidget implements View.OnClickListener {
             JSONArray subFormArray = formObject.optJSONArray(child);
             for (int i = subFormArray.length() - 1; i >= 0; --i) {
                 if (subFormArray.optJSONObject(i) != null && subFormArray.optJSONObject(i).optBoolean("hasSubForm", false)) {
-                    removeChild(subFormArray.optJSONObject(i).optString("name"));
+                    clearSubForm(subFormArray.optJSONObject(i).optString("name"));
                 }
                 try {
                     appendValue = (appendValue == 0) ? -1 : appendValue;
@@ -367,48 +397,4 @@ public class Select extends AbstractWidget implements View.OnClickListener {
 
 
     }
-
-    /**
-     * Method to inflate the subForm view from the option selection.
-     *
-     * @param key Key of the selected item.
-     */
-    private void inflateSubFormView(String key) {
-        JSONObject formObject = FormWrapper.getFormSchema().optJSONObject("fields");
-        if (formObject == null) {
-            return;
-        }
-        setElementOrder();
-        removeChild(mFieldName);
-        setElementOrder();
-        JSONArray subFormArray = formObject.optJSONArray(mFieldName + "_" + key);
-        if (subFormArray != null) {
-            String append = FormWrapper.getAttribByProperty(mFieldName, "append", null);
-            int appendValue = (append != null && !append.isEmpty()) ? Integer.parseInt(append) : 1;
-            for (int i = 0; i < subFormArray.length(); ++i) {
-                JSONObject fieldsObject = subFormArray.optJSONObject(i);
-                if (fieldsObject != null) {
-                    String name = fieldsObject.optString("name");
-                    String label = fieldsObject.optString("label");
-                    mFormWidget = mFormActivity.getWidget(mContext, name, fieldsObject, label, false, null, mFormWidgetList,
-                            mFormWidgetMap);
-                    if (fieldsObject.has(FormWrapper.SCHEMA_KEY_HINT))
-                        mFormWidget.setHint(fieldsObject.optString(FormWrapper.SCHEMA_KEY_HINT));
-                    try {
-                        mFormWidgetList.add(elementOrder + i + appendValue, mFormWidget);
-
-                    } catch (IndexOutOfBoundsException e) {
-                        Log.d("Exception  Adding", e.getMessage());
-                    }
-                    mFormWidgetMap.put(name, mFormWidget);
-                }
-            }
-        }
-        FormWrapper._layout.removeAllViews();
-        for (int i = 0; i < mFormWidgetList.size(); i++) {
-            FormWrapper._layout.addView(mFormWidgetList.get(i).getView());
-        }
-        FormWrapper.setRegistryByProperty(mFieldName, FormWrapper.getFormSchema().optJSONObject(mFieldName), (!key.equals("")) ? mFieldName + "_" + key : null, "multiOptions", 0);
-    }
-
 }

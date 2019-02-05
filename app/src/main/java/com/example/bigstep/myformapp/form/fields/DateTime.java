@@ -50,6 +50,7 @@ import java.util.Date;
 public class DateTime extends AbstractWidget implements View.OnClickListener {
 
     // Member Variables.
+    private final String ELEMENT_TAG = "DateTime_";
     private Context mContext;
     private View mConfigFieldView;
     private EditText etFieldValue;
@@ -70,7 +71,7 @@ public class DateTime extends AbstractWidget implements View.OnClickListener {
      * @param joProperty JSONObject Of the field.
      */
     public DateTime(Context context, final String name, JSONObject joProperty) {
-        super(context, name, joProperty.optBoolean("required", false));
+        super(context, name, joProperty.optBoolean("required", false), joProperty.optString("error", context.getResources().getString(R.string.widget_error_msg)));
 
         // Initializing member variables.
         this.mContext = context;
@@ -125,7 +126,7 @@ public class DateTime extends AbstractWidget implements View.OnClickListener {
         tvError = mConfigFieldView.findViewById(R.id.error_view);
         // Showing the attachment picker/date picker options.
         etFieldValue.setVisibility(View.VISIBLE);
-
+        etFieldValue.setTag(ELEMENT_TAG + mFieldName);
         // Showing the right drawable icon on the field value view.
         Drawable mDrawableIcon = ContextCompat.getDrawable(mContext, R.drawable.ic_date_range_black_24dp);
         if (mInputType.equals("time")) {
